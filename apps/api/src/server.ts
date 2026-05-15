@@ -1,7 +1,8 @@
 import "dotenv/config";
 import express from "express";
+import type { RequestHandler } from "express";
 import cors from "cors";
-import helmet from "helmet";
+import helmetModule from "helmet";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { z } from "zod";
@@ -33,6 +34,9 @@ const tickStore = new TickStore();
 const liveCache = new LiveCache();
 const riskEngine = new RiskEngine();
 const telegram = new TelegramAlertService();
+const helmet = (
+  helmetModule as unknown as { default?: () => RequestHandler } & (() => RequestHandler)
+).default ?? (helmetModule as unknown as () => RequestHandler);
 
 app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN }));

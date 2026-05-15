@@ -42,6 +42,14 @@ app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN }));
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "deriv-quant-api",
+    routes: ["/health", "/snapshot", "/analytics/digits", "/signals/live"]
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "deriv-quant-api", time: Date.now() });
 });

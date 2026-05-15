@@ -46,6 +46,17 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "deriv-quant-api", time: Date.now() });
 });
 
+app.get("/snapshot", async (_req, res) => {
+  const ticks = await liveCache.latest(1000);
+  const analysis = analyzeDigits(ticks);
+  res.json({
+    ticks: ticks.slice(-100),
+    analysis,
+    latestSignal: ticks.length ? generateSignal(ticks, analysis, riskEngine.current()) : tickStore.signals().at(-1),
+    risk: riskEngine.current()
+  });
+});
+
 app.get("/analytics/digits", async (_req, res) => {
   const ticks = await liveCache.latest(500);
   res.json(analyzeDigits(ticks));

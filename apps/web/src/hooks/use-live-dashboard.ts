@@ -33,17 +33,33 @@ const emptySnapshot: DashboardSnapshot = {
 export function useLiveDashboard() {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot>(emptySnapshot);
   const [connected, setConnected] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
   const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:4000";
 
   useEffect(() => {
-    const socket = io(socketUrl, { transports: ["websocket"] });
+    const controller = new AbortController();
+    fetch(`${apiUrl}/snapshot`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : undefined)
+      .then((data) => {
+        if (data) setSnapshot(data);
+      })
+      .catch(() => undefined);
+
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000
+    });
+
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("snapshot", setSnapshot);
     return () => {
+      controller.abort();
       socket.disconnect();
     };
-  }, [socketUrl]);
+  }, [apiUrl, socketUrl]);
 
   return useMemo(() => ({ snapshot, connected }), [snapshot, connected]);
 }
